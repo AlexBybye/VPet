@@ -1,0 +1,37 @@
+name: Build (Windows)
+
+# 仅用于验证能否在 Windows 上编译通过 (WPF + net8.0-windows).
+# 不含测试/签名/打包 —— 本项目无测试项目, 也无 MSIX 打包工程.
+
+on:
+  push:
+    branches: [ "main", "feature/**" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+        platform: [x64, x86]   # 代码含 #if X64 条件编译分支, 两个平台都要编
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore
+        run: dotnet restore VPet.sln
+
+      - name: Build (${{ matrix.configuration }} / ${{ matrix.platform }})
+        run: msbuild VPet.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
